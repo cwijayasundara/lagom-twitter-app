@@ -21,15 +21,15 @@ class LagomtwitterServiceSpec extends AsyncWordSpec with Matchers with BeforeAnd
   "lagom-twitter service" should {
 
     "say hello" in {
-      client.hello("Alice").invoke().map { answer =>
+      client.getTweet("Alice").invoke().map { answer =>
         answer should ===("Hello, Alice!")
       }
     }
 
     "allow responding with a custom message" in {
       for {
-        _ <- client.useGreeting("Bob").invoke(GreetingMessage("Hi"))
-        answer <- client.hello("Bob").invoke()
+        _ <- client.createTweet("Bob").invoke(TweetMessage("Hi"))
+        answer <- client.getTweet("Bob").invoke()
       } yield {
         answer should ===("Hi, Bob!")
       }

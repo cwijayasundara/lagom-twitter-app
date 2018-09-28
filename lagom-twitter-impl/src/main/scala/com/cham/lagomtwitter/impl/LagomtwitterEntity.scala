@@ -15,8 +15,8 @@ import scala.collection.immutable.Seq
   * stores what the greeting should be (eg, "Hello").
   *
   * Event sourced entities are interacted with by sending them commands. This
-  * entity supports two commands, a [[UseGreetingMessage]] command, which is
-  * used to change the greeting, and a [[Hello]] command, which is a read
+  * entity supports two commands, a [[UserTweetMessage]] command, which is
+  * used to change the greeting, and a [[Tweet]] command, which is a read
   * only command which returns a greeting to the name specified by the command.
   *
   * Commands get translated to events, and it's the events that get persisted by
@@ -26,8 +26,8 @@ import scala.collection.immutable.Seq
   * loaded from the database - each event will be replayed to recreate the state
   * of the entity.
   *
-  * This entity defines one event, the [[GreetingMessageChanged]] event,
-  * which is emitted when a [[UseGreetingMessage]] command is received.
+  * This entity defines one event, the [[UserTweetMessageChanged]] event,
+  * which is emitted when a [[UserTweetMessage]] command is received.
   */
 class LagomtwitterEntity extends PersistentEntity {
 
@@ -45,23 +45,23 @@ class LagomtwitterEntity extends PersistentEntity {
     * is a function of the current state to a set of actions.
     */
   override def behavior: Behavior = {
-    case LagomtwitterState(message, _) => Actions().onCommand[UseGreetingMessage, Done] {
+    case LagomtwitterState(message, _) => Actions().onCommand[UserTweetMessage, Done] {
 
       // Command handler for the UseGreetingMessage command
-      case (UseGreetingMessage(newMessage), ctx, state) =>
+      case (UserTweetMessage(newMessage), ctx, state) =>
         // In response to this command, we want to first persist it as a
         // GreetingMessageChanged event
         ctx.thenPersist(
-          GreetingMessageChanged(newMessage)
+          UserTweetMessageChanged(newMessage)
         ) { _ =>
           // Then once the event is successfully persisted, we respond with done.
           ctx.reply(Done)
         }
 
-    }.onReadOnlyCommand[Hello, String] {
+    }.onReadOnlyCommand[Tweet, String] {
 
       // Command handler for the Hello command
-      case (Hello(name), ctx, state) =>
+      case (Tweet(name), ctx, state) =>
         // Reply with a message built from the current message, and the name of
         // the person we're meant to say hello to.
         ctx.reply(s"$message, $name!")
@@ -69,7 +69,7 @@ class LagomtwitterEntity extends PersistentEntity {
     }.onEvent {
 
       // Event handler for the GreetingMessageChanged event
-      case (GreetingMessageChanged(newMessage), state) =>
+      case (UserTweetMessageChanged(newMessage), state) =>
         // We simply update the current state to use the greeting message from
         // the event.
         LagomtwitterState(newMessage, LocalDateTime.now().toString)
@@ -110,9 +110,9 @@ object LagomtwitterEvent {
 /**
   * An event that represents a change in greeting message.
   */
-case class GreetingMessageChanged(message: String) extends LagomtwitterEvent
+case class UserTweetMessageChanged(message: String) extends LagomtwitterEvent
 
-object GreetingMessageChanged {
+object UserTweetMessageChanged {
 
   /**
     * Format for the greeting message changed event.
@@ -120,7 +120,7 @@ object GreetingMessageChanged {
     * Events get stored and loaded from the database, hence a JSON format
     * needs to be declared so that they can be serialized and deserialized.
     */
-  implicit val format: Format[GreetingMessageChanged] = Json.format
+  implicit val format: Format[UserTweetMessageChanged] = Json.format
 }
 
 /**
@@ -134,9 +134,9 @@ sealed trait LagomtwitterCommand[R] extends ReplyType[R]
   * It has a reply type of [[Done]], which is sent back to the caller
   * when all the events emitted by this command are successfully persisted.
   */
-case class UseGreetingMessage(message: String) extends LagomtwitterCommand[Done]
+case class UserTweetMessage(message: String) extends LagomtwitterCommand[Done]
 
-object UseGreetingMessage {
+object UserTweetMessage {
 
   /**
     * Format for the use greeting message command.
@@ -147,7 +147,7 @@ object UseGreetingMessage {
     * that, a JSON format needs to be declared so the command can be serialized
     * and deserialized.
     */
-  implicit val format: Format[UseGreetingMessage] = Json.format
+  implicit val format: Format[UserTweetMessage] = Json.format
 }
 
 /**
@@ -156,9 +156,9 @@ object UseGreetingMessage {
   * The reply type is String, and will contain the message to say to that
   * person.
   */
-case class Hello(name: String) extends LagomtwitterCommand[String]
+case class Tweet(name: String) extends LagomtwitterCommand[String]
 
-object Hello {
+object Tweet {
 
   /**
     * Format for the hello command.
@@ -169,7 +169,7 @@ object Hello {
     * that, a JSON format needs to be declared so the command can be serialized
     * and deserialized.
     */
-  implicit val format: Format[Hello] = Json.format
+  implicit val format: Format[Tweet] = Json.format
 }
 
 /**
@@ -183,9 +183,9 @@ object Hello {
   */
 object LagomtwitterSerializerRegistry extends JsonSerializerRegistry {
   override def serializers: Seq[JsonSerializer[_]] = Seq(
-    JsonSerializer[UseGreetingMessage],
-    JsonSerializer[Hello],
-    JsonSerializer[GreetingMessageChanged],
+    JsonSerializer[UserTweetMessage],
+    JsonSerializer[Tweet],
+    JsonSerializer[UserTweetMessageChanged],
     JsonSerializer[LagomtwitterState]
   )
 }

@@ -7,7 +7,7 @@ import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
 import play.api.libs.json.{Format, Json}
 
 object LagomtwitterService  {
-  val TOPIC_NAME = "greetings"
+  val TOPIC_NAME = "tweets"
 }
 
 /**
@@ -19,32 +19,32 @@ object LagomtwitterService  {
 trait LagomtwitterService extends Service {
 
   /**
-    * Example: curl http://localhost:9000/api/hello/Alice
+    * Example: curl http://localhost:9000/api/tweet/Chaminda
     */
-  def hello(id: String): ServiceCall[NotUsed, String]
+  def getTweet(id: String): ServiceCall[NotUsed, String]
 
   /**
     * Example: curl -H "Content-Type: application/json" -X POST -d '{"message":
-    * "Hi"}' http://localhost:9000/api/hello/Alice
+    * "Hi"}' http://localhost:9000/api/tweet/Chaminda
     */
-  def useGreeting(id: String): ServiceCall[GreetingMessage, Done]
+  def createTweet(id: String): ServiceCall[TweetMessage, Done]
 
 
   /**
     * This gets published to Kafka.
     */
-  def greetingsTopic(): Topic[GreetingMessageChanged]
+  def tweetsTopic(): Topic[TweetMessageChanged]
 
   override final def descriptor = {
     import Service._
     // @formatter:off
     named("lagom-twitter")
       .withCalls(
-        pathCall("/api/hello/:id", hello _),
-        pathCall("/api/hello/:id", useGreeting _)
+        pathCall("/api/tweet/:id", getTweet _),
+        pathCall("/api/tweet/:id", createTweet _)
       )
       .withTopics(
-        topic(LagomtwitterService.TOPIC_NAME, greetingsTopic)
+        topic(LagomtwitterService.TOPIC_NAME, tweetsTopic)
           // Kafka partitions messages, messages within the same partition will
           // be delivered in order, to ensure that all messages for the same user
           // go to the same partition (and hence are delivered in order with respect
@@ -52,7 +52,7 @@ trait LagomtwitterService extends Service {
           // name as the partition key.
           .addProperty(
             KafkaProperties.partitionKeyStrategy,
-            PartitionKeyStrategy[GreetingMessageChanged](_.name)
+            PartitionKeyStrategy[TweetMessageChanged](_.name)
           )
       )
       .withAutoAcl(true)
@@ -63,30 +63,30 @@ trait LagomtwitterService extends Service {
 /**
   * The greeting message class.
   */
-case class GreetingMessage(message: String)
+case class TweetMessage(message: String)
 
-object GreetingMessage {
+object TweetMessage {
   /**
     * Format for converting greeting messages to and from JSON.
     *
     * This will be picked up by a Lagom implicit conversion from Play's JSON format to Lagom's message serializer.
     */
-  implicit val format: Format[GreetingMessage] = Json.format[GreetingMessage]
+  implicit val format: Format[TweetMessage] = Json.format[TweetMessage]
 }
 
 
 
 /**
   * The greeting message class used by the topic stream.
-  * Different than [[GreetingMessage]], this message includes the name (id).
+  * Different than [[TweetMessage]], this message includes the name (id).
   */
-case class GreetingMessageChanged(name: String, message: String)
+case class TweetMessageChanged(name: String, message: String)
 
-object GreetingMessageChanged {
+object TweetMessageChanged {
   /**
     * Format for converting greeting messages to and from JSON.
     *
     * This will be picked up by a Lagom implicit conversion from Play's JSON format to Lagom's message serializer.
     */
-  implicit val format: Format[GreetingMessageChanged] = Json.format[GreetingMessageChanged]
+  implicit val format: Format[TweetMessageChanged] = Json.format[TweetMessageChanged]
 }

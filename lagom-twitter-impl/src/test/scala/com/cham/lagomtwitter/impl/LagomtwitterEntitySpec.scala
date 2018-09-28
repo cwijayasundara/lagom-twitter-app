@@ -24,14 +24,14 @@ class LagomtwitterEntitySpec extends WordSpec with Matchers with BeforeAndAfterA
   "lagom-twitter entity" should {
 
     "say hello by default" in withTestDriver { driver =>
-      val outcome = driver.run(Hello("Alice"))
+      val outcome = driver.run(Tweet("Alice"))
       outcome.replies should contain only "Hello, Alice!"
     }
 
     "allow updating the greeting message" in withTestDriver { driver =>
-      val outcome1 = driver.run(UseGreetingMessage("Hi"))
-      outcome1.events should contain only GreetingMessageChanged("Hi")
-      val outcome2 = driver.run(Hello("Alice"))
+      val outcome1 = driver.run(UserTweetMessage("Hi"))
+      outcome1.events should contain only UserTweetMessageChanged("Hi")
+      val outcome2 = driver.run(Tweet("Alice"))
       outcome2.replies should contain only "Hi, Alice!"
     }
 

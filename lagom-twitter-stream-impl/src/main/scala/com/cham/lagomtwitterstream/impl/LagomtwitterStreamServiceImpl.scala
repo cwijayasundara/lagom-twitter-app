@@ -11,6 +11,6 @@ import scala.concurrent.Future
   */
 class LagomtwitterStreamServiceImpl(lagomtwitterService: LagomtwitterService) extends LagomtwitterStreamService {
   def stream = ServiceCall { hellos =>
-    Future.successful(hellos.mapAsync(8)(lagomtwitterService.hello(_).invoke()))
+    Future.successful(hellos.mapAsync(8)(lagomtwitterService.getTweet(_).invoke()))
   }
 }

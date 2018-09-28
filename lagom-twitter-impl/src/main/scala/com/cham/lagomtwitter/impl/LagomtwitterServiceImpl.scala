@@ -12,32 +12,32 @@ import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentE
   */
 class LagomtwitterServiceImpl(persistentEntityRegistry: PersistentEntityRegistry) extends LagomtwitterService {
 
-  override def hello(id: String) = ServiceCall { _ =>
+  override def getTweet(id: String) = ServiceCall { _ =>
     // Look up the lagom-twitter entity for the given ID.
     val ref = persistentEntityRegistry.refFor[LagomtwitterEntity](id)
     // Ask the entity the Hello command.
-    ref.ask(Hello(id))
+    ref.ask(Tweet(id))
   }
 
-  override def useGreeting(id: String) = ServiceCall { request =>
+  override def createTweet(id: String) = ServiceCall { request =>
     // Look up the lagom-twitter entity for the given ID.
-    printf("Inside LagomtwitterServiceImpl.useGreeting");
+    printf("Inside LagomtwitterServiceImpl.createTweet");
     val ref = persistentEntityRegistry.refFor[LagomtwitterEntity](id)
     // Tell the entity to use the greeting message specified.
-    ref.ask(UseGreetingMessage(request.message))
+    ref.ask(UserTweetMessage(request.message))
   }
 
 
-  override def greetingsTopic(): Topic[api.GreetingMessageChanged] =
+  override def tweetsTopic(): Topic[api.TweetMessageChanged] =
     TopicProducer.singleStreamWithOffset {
       fromOffset =>
         persistentEntityRegistry.eventStream(LagomtwitterEvent.Tag, fromOffset)
           .map(ev => (convertEvent(ev), ev.offset))
     }
 
-  private def convertEvent(helloEvent: EventStreamElement[LagomtwitterEvent]): api.GreetingMessageChanged = {
+  private def convertEvent(helloEvent: EventStreamElement[LagomtwitterEvent]): api.TweetMessageChanged = {
     helloEvent.event match {
-      case GreetingMessageChanged(msg) => api.GreetingMessageChanged(helloEvent.entityId, msg)
+      case UserTweetMessageChanged(msg) => api.TweetMessageChanged(helloEvent.entityId, msg)
     }
   }
 }
